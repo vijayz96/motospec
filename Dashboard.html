@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotoSpec · Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        body {
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+        }
+
+        /* Light theme */
+        body.light {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        body.light .navbar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        body.light .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        body.light .product-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+
+        body.light .empty-state {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        body.light .settings-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Dark theme */
+        body.dark {
+            background: #0b1120;
+            color: #e2e8f0;
+        }
+
+        body.dark .navbar {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+
+        body.dark .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        body.dark .product-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+        }
+
+        body.dark .empty-state {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px dashed #334155;
+        }
+
+        body.dark .settings-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+        }
+
+        body.dark select, body.dark input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+        }
+
+        .navbar {
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-btn.light {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .nav-btn.dark {
+            background: #334155;
+            color: white;
+        }
+
+        .nav-btn.logout {
+            background: #ef4444;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .welcome-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .welcome-section h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .welcome-section p {
+            opacity: 0.7;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+        }
+
+        .card h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .card .value {
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .product-card {
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            transition: 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .product-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #3b82f6;
+            margin: 1rem 0;
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 0.8rem;
+        }
+
+        .badge {
+            background: #3b82f6;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            border-radius: 2rem;
+            grid-column: 1 / -1;
+        }
+
+        /* Settings tab */
+        .settings-section {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid currentColor;
+            opacity: 0.2;
+        }
+
+        .settings-card {
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            max-width: 400px;
+        }
+
+        .settings-card h4 {
+            margin-bottom: 1rem;
+        }
+
+        .settings-card select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin: 0.5rem 0 1rem;
+            font-size: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="light">
+    <nav class="navbar">
+        <span class="logo">motospec</span>
+        <div class="nav-actions">
+            <button class="nav-btn" id="themeToggleBtn">🌓 theme</button>
+            <button class="nav-btn logout" id="logoutBtn">logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- welcome + stats -->
+        <div class="welcome-section">
+            <h2 id="welcomeMessage">welcome back</h2>
+            <p>manage your products and view performance</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="card">
+                <h3>total products</h3>
+                <div class="value" id="totalProducts">0</div>
+            </div>
+            <div class="card">
+                <h3>active listings</h3>
+                <div class="value" id="activeProducts">0</div>
+            </div>
+            <div class="card">
+                <h3>pending</h3>
+                <div class="value" id="pendingProducts">0</div>
+            </div>
+        </div>
+
+        <h3 class="section-title">your products</h3>
+        <div class="products-grid" id="productsContainer">
+            <div class="empty-state">
+                <p>no products yet — upload via the product upload site</p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">new uploads will appear here automatically</p>
+            </div>
+        </div>
+
+        <!-- settings panel (theme control) -->
+        <div class="settings-section" id="settingsPanel">
+            <h3 class="section-title">settings</h3>
+            <div class="settings-card">
+                <h4>appearance</h4>
+                <label for="themeSelect">theme preference</label>
+                <select id="themeSelect">
+                    <option value="light">light</option>
+                    <option value="dark">dark</option>
+                </select>
+                <p style="font-size: 0.9rem; opacity: 0.7;">changes saved automatically</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== FIREBASE ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyCi0sodw0gRs0fNllMZbODIKpxxj4gwdos",
+            authDomain: "motospec-system.firebaseapp.com",
+            projectId: "motospec-system",
+            storageBucket: "motospec-system.firebasestorage.app",
+            messagingSenderId: "944522359083",
+            appId: "1:944522359083:web:65b0706d8aadd4a63f556e",
+            measurementId: "G-TP1EQWSYZJ"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // ========== THEME ==========
+        const body = document.body;
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeSelect = document.getElementById('themeSelect');
+
+        function setTheme(theme) {
+            body.className = theme;
+            localStorage.setItem('theme', theme);
+            themeSelect.value = theme;
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = body.className === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+        });
+
+        themeSelect.addEventListener('change', (e) => {
+            setTheme(e.target.value);
+        });
+
+        // ========== AUTH ==========
+        auth.onAuthStateChanged(user => {
+            if (!user || !user.emailVerified) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Show user email in welcome message
+            document.getElementById('welcomeMessage').textContent = `welcome, ${user.email.split('@')[0]}`;
+
+            // ========== LOAD PRODUCTS (MOCKUP - CONNECT TO MAKE LATER) ==========
+            // this is where you'll call your make webhook
+            // for now, show sample data so dashboard looks alive
+            
+            const productsContainer = document.getElementById('productsContainer');
+            const totalEl = document.getElementById('totalProducts');
+            const activeEl = document.getElementById('activeProducts');
+            const pendingEl = document.getElementById('pendingProducts');
+
+            // SIMULATED PRODUCTS (remove this when connecting to real data)
+            setTimeout(() => {
+                const mockProducts = [
+                    { name: 'Yamaha R6 Fairing Kit', price: 299, sku: 'YAM-001', status: 'active' },
+                    { name: 'Kawasaki Ninja Exhaust', price: 449, sku: 'KAW-089', status: 'active' },
+                    { name: 'Honda CBR Carbon Fiber', price: 179, sku: 'HON-432', status: 'pending' },
+                    { name: 'Suzuki GSX-R Seat', price: 129, sku: 'SUZ-776', status: 'active' },
+                ];
+
+                totalEl.textContent = mockProducts.length;
+                activeEl.textContent = mockProducts.filter(p => p.status === 'active').length;
+                pendingEl.textContent = mockProducts.filter(p => p.status === 'pending').length;
+
+                productsContainer.innerHTML = '';
+                mockProducts.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <div class="product-name">${p.name}</div>
+                        <div class="product-price">$${p.price}</div>
+                        <div class="product-meta">
+                            <span>SKU: ${p.sku}</span>
+                            <span class="badge" style="background: ${p.status === 'active' ? '#22c55e' : '#eab308'}">${p.status}</span>
+                        </div>
+                    `;
+                    productsContainer.appendChild(card);
+                });
+            }, 500);
+        });
+
+        // ========== LOGOUT ==========
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
